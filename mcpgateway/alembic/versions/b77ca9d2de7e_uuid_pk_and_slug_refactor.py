@@ -50,6 +50,12 @@ def _use_batch() -> bool:
     """
     return op.get_bind().dialect.name == "sqlite"
 
+def _get_schema() -> str:
+    """Read schema from the search path"""
+
+    result = op.execute(sa.text("SHOW search_path"))
+    schema = result.scalar().split(',')[0].strip().strip('"')
+    return schema
 
 # ──────────────────────────────────────────────────────────────────────────────
 # Upgrade
@@ -93,8 +99,12 @@ def upgrade() -> None:
         >>> upgrade()  # doctest: +SKIP
         Existing installation detected. Starting data and schema migration...
     """
+    
     bind = op.get_bind()
     sess = Session(bind=bind)
+
+    op.execute(f'CREATE SCHEMA IF NOT EXISTS "{_get_schema()}"')
+
     inspector = sa.inspect(bind)
 
     if not inspector.has_table("gateways"):
@@ -550,3 +560,5 @@ def downgrade() -> None:
     op.drop_column("tools", "id_new")
     op.drop_column("gateways", "id_new")
     op.drop_column("gateways", "slug")
+
+    op.execute(f'DROP SCHEMA IF EXISTS "{_get_schema()}" CASCADE')

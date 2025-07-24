@@ -40,11 +40,13 @@ spec:
           env:
             # ---------- POSTGRES ----------
             - name: POSTGRES_HOST
-              value: {{ printf "%s-postgres" (include "mcp-stack.fullname" .) }}
+              value: {{ .Values.mcpContextForge.env.postgres.host | default (printf "%s-postgres" (include "mcp-stack.fullname" .)) }}
             - name: POSTGRES_PORT
               value: "{{ .Values.mcpContextForge.env.postgres.port }}"
             - name: POSTGRES_DB
               value: "{{ .Values.mcpContextForge.env.postgres.db }}"
+            - name: POSTGRES_SCHEMA
+              value: {{ .Values.mcpContextForge.env.postgres.schema | default "public" }}
             - name: POSTGRES_USER
               valueFrom:
                 secretKeyRef:
@@ -57,9 +59,11 @@ spec:
                   key: POSTGRES_PASSWORD
 
             # ---------- DERIVED URLS ----------
+          {{- if not .Values.mcpContextForge.secret.DATABASE_URL  }}
             - name: DATABASE_URL
               value: >-
-                postgresql://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@$(POSTGRES_HOST):$(POSTGRES_PORT)/$(POSTGRES_DB)
+                postgresql://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@$(POSTGRES_HOST):$(POSTGRES_PORT)/$(POSTGRES_DB)?options=-c%20search_path==$(POSTGRES_SCHEMA)
+          {{- end }}
 
             # ---------- LOGGING ----------
             - name: LOG_LEVEL

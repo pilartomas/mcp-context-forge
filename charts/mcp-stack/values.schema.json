@@ -218,6 +218,10 @@
                   "type": "string",
                   "default": "postgresdb"
                 },
+                "schema": {
+                  "type": "string",
+                  "default": "public"
+                },
                 "userKey": {
                   "type": "string",
                   "default": "POSTGRES_USER"
